@@ -1,0 +1,1 @@
+py ./src/__init__.py ./word_lists/1000-most-common.txt 150
