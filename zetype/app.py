@@ -15,7 +15,8 @@ class App:
         self.window = window
         self.is_running = False
         self.app_start_time = time()
-        self.prompt = PromptManager("Hello GitHub, this is zetype! I am a passion project created.")
+        self.prompt = PromptManager("Hello GitHub, this is zetype! "
+                                    "I am a passion project created as a means to showcase my python skills.")
         self.input = InputHandler(self.prompt)
 
         self.wpm: float = 0
