@@ -283,7 +283,7 @@ class PromptManager:
             if (" " in segment) and (index := segment.rindex(" ")):
                 segment = segment[:index]
 
-            # Resolve the segmented indexes of errors from `self.error_log`
+            # Resolve the segmented indices of errors from `self.error_log`
             segment_errors = []
             for index, error in enumerate(errors):
                 if start_pos <= error.index < (start_pos + len(segment)):
