@@ -270,11 +270,12 @@ class PromptManager:
             start_pos (int): The starting position within the prompt to segment (default 0)
 
         Yields:
+            int: Segment iteration
             str: Segmented string from `self.prompt`
             list[InputError]: List of errors contained within the segment with relative indexes.
         """
         errors = self.error_log[:]
-
+        row = 0
         while start_pos < len(self.prompt):
             # Create a segment at `start_pos` of size `max_length`
             segment = self.prompt[start_pos:][:max_length]
@@ -294,4 +295,5 @@ class PromptManager:
             start_pos += len(segment)
 
             # Yield string segment, and `InputError`s within string segment.
-            yield segment, segment_errors
+            yield row, segment, segment_errors
+            row += 1
