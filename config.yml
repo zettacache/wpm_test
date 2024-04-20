@@ -1,0 +1,22 @@
+typing:
+  word_amount: 50
+
+appearance:
+  colors:
+    background: &background 235
+
+    foreground: &foreground 15
+    foreground_dim: &foreground_dim 238
+
+    accent: &accent 69
+
+  text_styles:
+    primary:
+      foreground: *foreground
+      background: *background
+    secondary:
+      foreground: *foreground_dim
+      background: *background
+    accent:
+      foreground: *accent
+      background: *background
