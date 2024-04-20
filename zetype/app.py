@@ -1,6 +1,6 @@
 import curses
 from time import time
-from zetype import minutes_since, get_accuracy, get_words_typed, PromptManager, Colors, Key
+from zetype import PromptManager, Colors, Key
 
 
 class App:
@@ -89,27 +89,21 @@ class App:
         self.window.addstr(
             4,
             0,
-            f" WPM: {int(self.wpm)} ",
+            f" WPM: {int(self.prompt.stats.words_per_minute)} ",
             curses.color_pair(Colors.PRIMARY_INVERTED)
         )
         self.window.addstr(
             5,
             0,
-            f" ACC: {int(self.char_accuracy)}% ",
+            f" ACC: {int(self.prompt.stats.typing_accuracy)}% ",
             curses.color_pair(Colors.PRIMARY_INVERTED)
         )
-
-    def _calculate_stats(self) -> None:
-        """Calculate any necessary statistics."""
-        self.wpm = get_words_typed(self.char_total) / minutes_since(self.app_start_time)
-        self.char_accuracy = get_accuracy(self.char_correct, self.char_total)
 
     def run(self) -> None:
         """Run the main application loop."""
         self.is_running = True
         while self.is_running:
             self._process_input()
-            self._calculate_stats()
             self._render()
 
     def stop(self) -> None:
