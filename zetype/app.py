@@ -1,6 +1,6 @@
 import curses
 from time import time
-from zetype import minutes_since, get_accuracy, get_words_typed, TypingManager, Colors, Key
+from zetype import minutes_since, get_accuracy, get_words_typed, PromptManager, Colors, Key
 
 
 class App:
@@ -15,7 +15,7 @@ class App:
         self.window = window
         self.is_running = False
         self.app_start_time = time()
-        self.prompt = TypingManager("Hello GitHub, this is zetype! I am a passion project created.")
+        self.prompt = PromptManager("Hello GitHub, this is zetype! I am a passion project created.")
 
         self.wpm: float = 0
         # TODO: Turn character tracking properties into a more organized structure
@@ -44,7 +44,7 @@ class App:
             case Key.RESIZE:
                 raise NotImplemented
             case Key.BACKSPACE | Key.DELETE:
-                self.prompt.undo_previous_input()
+                self.prompt.revert_last_input()
             case Key.BLANK:
                 return
             case _:
@@ -63,24 +63,24 @@ class App:
         self._render_stats()
 
     def _render_prompt(self) -> None:
-        self.window.addstr(0, 0, self.prompt.prompt_text, curses.A_DIM)
+        self.window.addstr(0, 0, self.prompt.prompt, curses.A_DIM)
 
     def _render_typed_characters(self) -> None:
-        self.window.addstr(0, 0, self.prompt.get_substringed())
+        self.window.addstr(0, 0, self.prompt.prompt_until_cursor)
 
     def _render_incorrect_characters(self) -> None:
-        for index, char in self.prompt.get_wrong_characters():
+        for error in self.prompt.error_log:
             self.window.addstr(
                 0,
-                index,
-                char,
+                error.index,
+                error.expected_char,
                 curses.color_pair(Colors.WRONG) | curses.A_UNDERLINE
             )
 
     def _render_cursor(self) -> None:
         self.window.addstr(
             0,
-            self.prompt.current_index,
+            self.prompt.cursor_index,
             self.prompt.current_character,
             curses.color_pair(Colors.PRIMARY_INVERTED)
         )
@@ -107,7 +107,7 @@ class App:
     def run(self) -> None:
         """Run the main application loop."""
         self.is_running = True
-        while self.is_running and not self.prompt.done:
+        while self.is_running:
             self._process_input()
             self._calculate_stats()
             self._render()
