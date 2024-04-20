@@ -1,3 +1,5 @@
+"""Ensures proper functionality of `prompt_manager.py`."""
+
 import unittest
 from zetype.prompt_manager import PromptManager, InputError
 
