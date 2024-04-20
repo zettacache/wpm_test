@@ -162,7 +162,7 @@ class PromptManager:
         Raises:
             IndexError: If the index is not within bounds.
         """
-        if not (0 <= (index + self.cursor_index) <= len(self.prompt)):
+        if not self._is_relative_index_in_bounds(index):
             raise IndexError(f"Index {index} is out of bounds.")
 
     def _is_relative_index_in_bounds(self, index: int) -> bool:
@@ -175,7 +175,7 @@ class PromptManager:
         Returns:
             bool: Whether the index is within bounds or not.
         """
-        return 0 <= (index + self.cursor_index) <= len(self.prompt)
+        return 0 <= (self.cursor_index + index) < len(self.prompt)
 
     def _move_cursor(self, amount: int) -> None:
         """
@@ -216,7 +216,9 @@ class PromptManager:
 
         # Update stats and cursor
         self.stats.count_character(is_correct=(not is_incorrect))
-        self._move_cursor(1)
+
+        if self._is_relative_index_in_bounds(1):
+            self._move_cursor(1)
 
         return not is_incorrect
 
@@ -227,9 +229,9 @@ class PromptManager:
         Raises:
             IndexError: If there is no previous input to revert.
         """
-        if self.cursor_index == 0:
-            raise IndexError("No previous input to revert.")
+        if not self._is_relative_index_in_bounds(-1):
+            return
 
-        self.cursor_index -= 1
-        if len(self.error_log) > 0 and (self.error_log[-1].index == self.cursor_index):
+        self._move_cursor(-1)
+        if (len(self.error_log) > 0) and (self.error_log[-1].index == self.cursor_index):
             self.error_log.pop()
