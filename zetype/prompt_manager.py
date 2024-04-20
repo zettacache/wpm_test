@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from time import time
+from typing import Optional
 
 from zetype import minutes_since
 
@@ -44,21 +45,22 @@ class TypingStats:
         return self.total_typed - self.total_errors
 
     @property
-    def typing_accuracy(self) -> float:
+    def typing_accuracy(self) -> Optional[float]:
         """
         Calculate the typing accuracy as a percentage.
 
         TODO: Make return optional when `self.total_typed == 0`
 
         Returns:
-            float: The typing accuracy percentage (0-100).
+            float | None: The typing accuracy percentage from 0-100 (Returns `None` if no characters have been counted).
         """
         if self.total_typed == 0:
-            return 100.0  # Default to 100% accuracy if no characters are typed
+            return None
+
         return (self.total_correct / self.total_typed) * 100
 
     @property
-    def words_per_minute(self) -> float:
+    def words_per_minute(self) -> Optional[float]:
         """
         Calculates the average typed words per minute.
 
@@ -66,8 +68,12 @@ class TypingStats:
         Although that could introduce a prompt bias based on length of words given.
 
         Returns:
-            float: Average words per minute since `self._start_time`
+            float | None: Average words per minute since `self._start_time` (Returns `None` if no characters
+                          have been counted).
         """
+        if self.total_typed == 0:
+            return None
+
         words_typed = self.total_typed / 4.7  # 4.7 is the average amount of characters in an english word.
         return words_typed / minutes_since(self._start_time)
 
