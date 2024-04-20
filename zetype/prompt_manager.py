@@ -49,8 +49,6 @@ class TypingStats:
         """
         Calculate the typing accuracy as a percentage.
 
-        TODO: Make return optional when `self.total_typed == 0`
-
         Returns:
             float | None: The typing accuracy percentage from 0-100 (Returns `None` if no characters have been counted).
         """
