@@ -152,6 +152,31 @@ class PromptManager:
         if len(char) != 1:
             raise ValueError(f"Expected a single character, but received '{char}'")
 
+    def _check_index_in_bounds(self, index: int) -> None:
+        """
+        Check if the provided index is within the bounds of `self.prompt`.
+
+        Args:
+            index (int): The index to check.
+
+        Raises:
+            IndexError: If the index is not within bounds.
+        """
+        if not self._is_index_in_bounds(index):
+            raise IndexError(f"Index {index} is out of bounds.")
+
+    def _is_index_in_bounds(self, index: int) -> bool:
+        """
+        Check if the provided index is within the bounds of `self.prompt`.
+
+        Args:
+            index (int): The index to check.
+
+        Returns:
+            bool: Whether the index is within bounds or not.
+        """
+        return 0 <= index < len(self.prompt)
+
     def _check_relative_index_in_bounds(self, index: int) -> None:
         """
         Check if the provided index is within the bounds of `self.prompt` relative to the cursor.
@@ -163,7 +188,7 @@ class PromptManager:
             IndexError: If the index is not within bounds.
         """
         if not self._is_relative_index_in_bounds(index):
-            raise IndexError(f"Index {index} is out of bounds.")
+            raise IndexError(f"Index {self.cursor_index + index} is out of bounds.")
 
     def _is_relative_index_in_bounds(self, index: int) -> bool:
         """
@@ -235,3 +260,38 @@ class PromptManager:
         self._move_cursor(-1)
         if (len(self.error_log) > 0) and (self.error_log[-1].index == self.cursor_index):
             self.error_log.pop()
+
+    def segment_prompt(self, max_length: int, start_pos: int = 0):
+        """
+        Generates segmented strings from `self.prompt` of size `max_length` or shorter
+
+        Args:
+            max_length (int): The maximum length of a segment (the length will be shorter if a space is present)
+            start_pos (int): The starting position within the prompt to segment (default 0)
+
+        Yields:
+            str: Segmented string from `self.prompt`
+            list[InputError]: List of errors contained within the segment with relative indexes.
+        """
+        errors = self.error_log[:]
+
+        while start_pos < len(self.prompt):
+            # Create a segment at `start_pos` of size `max_length`
+            segment = self.prompt[start_pos:][:max_length]
+
+            # Check if segment contains a space, if it does, trim the string to that point.
+            if (" " in segment) and (index := segment.rindex(" ")):
+                segment = segment[:index]
+
+            # Resolve the segmented indexes of errors from `self.error_log`
+            segment_errors = []
+            for index, error in enumerate(errors):
+                if start_pos <= error.index < (start_pos + len(segment)):
+                    error.index -= start_pos
+                    segment_errors.append(errors.pop(index))
+
+            # Update `start_pos` for next segment
+            start_pos += len(segment)
+
+            # Yield string segment, and `InputError`s within string segment.
+            yield segment, segment_errors
