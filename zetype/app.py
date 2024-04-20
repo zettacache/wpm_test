@@ -1,6 +1,6 @@
 import curses
 from time import time
-from zetype import PromptManager, Colors, Key
+from zetype import PromptManager, Colors, InputHandler, InputAction
 
 
 class App:
@@ -16,6 +16,7 @@ class App:
         self.is_running = False
         self.app_start_time = time()
         self.prompt = PromptManager("Hello GitHub, this is zetype! I am a passion project created.")
+        self.input = InputHandler(self.prompt)
 
         self.wpm: float = 0
         # TODO: Turn character tracking properties into a more organized structure
@@ -38,20 +39,9 @@ class App:
         """Process user keyboard input."""
         user_input = self.window.getch()
 
-        match user_input:
-            case Key.ABORT | Key.ESCAPE:
-                self.stop()
-            case Key.RESIZE:
-                raise NotImplemented
-            case Key.BACKSPACE | Key.DELETE:
-                self.prompt.revert_last_input()
-            case Key.BLANK:
-                return
-            case _:
-                is_char_correct = self.prompt.process_input(chr(user_input))
-                self.char_total += 1
-                if is_char_correct:
-                    self.char_correct += 1
+        input_action = self.input.process_getch(user_input)
+        if input_action == InputAction.EXIT_PROGRAM:
+            self.stop()
 
     def _render(self) -> None:
         """Render the current state of the application."""
@@ -86,7 +76,6 @@ class App:
         )
 
     def _render_stats(self) -> None:
-        wpm_text = ""
         if wpm := self.prompt.stats.words_per_minute:
             wpm_text = f" WPM: {int(wpm)} "
         else:
@@ -98,7 +87,6 @@ class App:
             curses.color_pair(Colors.PRIMARY_INVERTED)
         )
 
-        accuracy_text = ""
         if accuracy := self.prompt.stats.typing_accuracy:
             accuracy_text = f" ACC: {int(accuracy)}% "
         else:
