@@ -1,4 +1,7 @@
 from dataclasses import dataclass
+from time import time
+
+from zetype import minutes_since
 
 
 @dataclass
@@ -16,6 +19,79 @@ class InputError:
     received_char: str
 
 
+@dataclass
+class TypingStats:
+    """
+    Tracks the overall statistics of a `PromptManager`.
+
+    Attributes:
+        _start_time (int):  The time which `words_per_minute` will be calculated from
+        total_typed (int):  The total amount of characters typed, correctly or incorrectly.
+        total_errors (int): The total amount of characters typed incorrectly.
+    """
+    _start_time = time()
+    total_typed = 0
+    total_errors = 0
+
+    @property
+    def total_correct(self) -> int:
+        """
+        Get the total number of correctly typed characters.
+
+        Returns:
+            int: The count of characters typed correctly.
+        """
+        return self.total_typed - self.total_errors
+
+    @property
+    def typing_accuracy(self) -> float:
+        """
+        Calculate the typing accuracy as a percentage.
+
+        TODO: Make return optional when `self.total_typed == 0`
+
+        Returns:
+            float: The typing accuracy percentage (0-100).
+        """
+        if self.total_typed == 0:
+            return 100.0  # Default to 100% accuracy if no characters are typed
+        return (self.total_correct / self.total_typed) * 100
+
+    @property
+    def words_per_minute(self) -> float:
+        """
+        Calculates the average typed words per minute.
+
+        NOTE: Possibly, revisit this to more accurately track wpm instead of average characters per word.
+        Although that could introduce a prompt bias based on length of words given.
+
+        Returns:
+            float: Average words per minute since `self._start_time`
+        """
+        words_typed = self.total_typed / 4.7  # 4.7 is the average amount of characters in an english word.
+        return words_typed / minutes_since(self._start_time)
+
+    def update_start_time(self, start_time=time()) -> None:
+        """
+        Updates `self._start_time` to the provided time.
+
+        Args:
+            start_time (float): The new start time in seconds (defaults to time of calling the method).
+        """
+        self._start_time = start_time
+
+    def count_character(self, is_correct: bool = True) -> None:
+        """
+        Increments the total character counters.
+
+        Args:
+            is_correct (bool): Whether the character should be counted as correct or as an error (defaults to True).
+        """
+        self.total_typed += 1
+        if not is_correct:
+            self.total_errors += 1
+
+
 class PromptManager:
     """
     Manages a typing prompt for a word per minute (WPM) test application.
@@ -23,8 +99,6 @@ class PromptManager:
     Attributes:
         prompt (str): The prompt string for input processing.
         cursor_index (int): The current cursor position within the prompt.
-        total_typed (int): The total number of characters typed.
-        total_typed_correct (int): The total number of characters typed correctly.
         error_log (list[InputError]): A list of InputError instances tracking typing errors.
     """
 
@@ -35,9 +109,9 @@ class PromptManager:
         Args:
             prompt (str): The prompt string for input processing.
         """
-        self.prompt = prompt
-        self.cursor_index = 0
-        self.total_typed, self.total_typed_correct = 0, 0
+        self.prompt, self.cursor_index = prompt, 0
+
+        self.stats = TypingStats()
         self.error_log: list[InputError] = []
 
     @property
@@ -60,28 +134,6 @@ class PromptManager:
         """
         return self.prompt[:self.cursor_index]
 
-    @property
-    def total_typed_incorrect(self) -> int:
-        """
-        Get the total number of incorrectly typed characters.
-
-        Returns:
-            int: The count of characters typed incorrectly.
-        """
-        return self.total_typed - self.total_typed_correct
-
-    @property
-    def typing_accuracy(self) -> float:
-        """
-        Calculate the typing accuracy as a percentage.
-
-        Returns:
-            float: The typing accuracy percentage.
-        """
-        if self.total_typed == 0:
-            return 100.0  # Default to 100% accuracy if no characters are typed
-        return (self.total_typed_correct / self.total_typed) * 100
-
     @staticmethod
     def _check_str_is_char(char: str) -> None:
         """
@@ -96,6 +148,44 @@ class PromptManager:
         if len(char) != 1:
             raise ValueError(f"Expected a single character, but received '{char}'")
 
+    def _check_relative_index_in_bounds(self, index: int) -> None:
+        """
+        Check if the provided index is within the bounds of `self.prompt` relative to the cursor.
+
+        Args:
+            index (int): The distance from cursor to check.
+
+        Raises:
+            IndexError: If the index is not within bounds.
+        """
+        if not (0 <= (index + self.cursor_index) <= len(self.prompt)):
+            raise IndexError(f"Index {index} is out of bounds.")
+
+    def _is_relative_index_in_bounds(self, index: int) -> bool:
+        """
+        Check if the provided index is within the bounds of `self.prompt` relative to the cursor.
+
+        Args:
+            index (int): The distance from cursor to check.
+
+        Returns:
+            bool: Whether the index is within bounds or not.
+        """
+        return 0 <= (index + self.cursor_index) <= len(self.prompt)
+
+    def _move_cursor(self, amount: int) -> None:
+        """
+        Moves the cursor index by a provided amount.
+
+        Args:
+            amount (int): The amount to move the cursor.
+
+        Raises:
+            IndexError: If the new index is not within bounds.
+        """
+        self._check_relative_index_in_bounds(amount)
+        self.cursor_index += amount
+
     def process_input(self, char: str) -> bool:
         """
         Process input character and update typing statistics.
@@ -105,11 +195,14 @@ class PromptManager:
 
         Returns:
             bool: True if the input character matches the expected character at the cursor index, otherwise False.
+
+        Raises:
+            ValueError: If `len(char) != 1`
         """
         self._check_str_is_char(char)
 
-        is_incorrect = (self.current_character != char)
-        if is_incorrect:
+        # Add index to `self.error_log` if the character does not match.
+        if is_incorrect := (self.current_character != char):
             error = InputError(
                 index=self.cursor_index,
                 expected_char=self.current_character,
@@ -117,7 +210,10 @@ class PromptManager:
             )
             self.error_log.append(error)
 
-        self.cursor_index += 1
+        # Update stats and cursor
+        self.stats.count_character(is_correct=(not is_incorrect))
+        self._move_cursor(1)
+
         return not is_incorrect
 
     def revert_last_input(self) -> None:
