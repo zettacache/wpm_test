@@ -1,10 +1,13 @@
+"""Module that handles input logic from `app.py`."""
+
 from dataclasses import dataclass
 from enum import Enum, auto
 
-from zetype import PromptManager
+from zetype.prompt_manager import PromptManager
 
 
 class InputAction(Enum):
+    """Possible actions returned to the application that need to be handled."""
     NONE = auto()
     EXIT_PROGRAM = auto()
     RESIZE = auto()
@@ -14,6 +17,7 @@ class InputAction(Enum):
 
 @dataclass
 class InputCode:
+    """List of common meta-key input codes."""
     BLANK = -1
     ABORT = 3  # KeyboardInterrupt
     ESCAPE = 27
@@ -22,11 +26,23 @@ class InputCode:
     RESIZE = 410
 
 
-class InputHandler:
+class InputHandler:  # pylint: disable=too-few-public-methods
+    """Used as an input-processing middle-man between `app.py` and `prompt_manager.py`"""
+
     def __init__(self, prompt: PromptManager) -> None:
         self.prompt = prompt
 
     def process_getch(self, user_input: int) -> InputAction:
+        """
+        Determines app behavior from the return of getch.
+
+        Args:
+            user_input (int): Input code (should be from getch)
+
+        Returns:
+            InputAction: A brief descriptor of how `user_input` was processed
+        """
+
         if user_input == InputCode.BLANK:
             return InputAction.NONE
 

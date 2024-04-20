@@ -1,6 +1,10 @@
+"""Module responsible for the application runtime."""
+
 import curses
 from time import time
-from zetype import PromptManager, Colors, InputHandler, InputAction
+from zetype.colors import Colors
+from zetype.prompt_manager import PromptManager
+from zetype.input_handler import InputHandler, InputAction
 
 
 class App:
@@ -16,14 +20,10 @@ class App:
         self.is_running = False
         self.app_start_time = time()
         self.prompt = PromptManager("Hello GitHub, this is zetype! "
-                                    "I am a passion project created as a means to showcase my python skills.")
+                                    "I am a project created to showcase my python skills.")
         self.input = InputHandler(self.prompt)
 
         self.wpm: float = 0
-        # TODO: Turn character tracking properties into a more organized structure
-        self.char_correct: int = 0
-        self.char_total: int = 0
-        self.char_accuracy = 0
 
     def initialize(self) -> None:
         """Initialize the curses environment."""
