@@ -77,27 +77,13 @@ class App:
         )
 
     def _render_stats(self) -> None:
-        if wpm := self.prompt.stats.words_per_minute:
-            wpm_text = f" WPM: {int(wpm)} "
-        else:
-            wpm_text = " TYPE TO START "
-        self.window.addstr(
-            4,
-            0,
-            wpm_text,
-            curses.color_pair(Colors.PRIMARY_INVERTED)
-        )
+        wpm = f" WPM: {int(self.prompt.stats.words_per_minute)} " or " TYPE TO START "
+        accuracy = f" ACC: {int(self.prompt.stats.typing_accuracy)}% " or " TYPE TO START "
 
-        if accuracy := self.prompt.stats.typing_accuracy:
-            accuracy_text = f" ACC: {int(accuracy)}% "
-        else:
-            accuracy_text = " TYPE TO START "
-        self.window.addstr(
-            5,
-            0,
-            accuracy_text,
-            curses.color_pair(Colors.PRIMARY_INVERTED)
-        )
+        # WPM text
+        self.window.addstr(4, 0, wpm, curses.color_pair(Colors.PRIMARY_INVERTED))
+        # Accuracy text
+        self.window.addstr(5, 0, accuracy, curses.color_pair(Colors.PRIMARY_INVERTED))
 
     def run(self) -> None:
         """Run the main application loop."""
