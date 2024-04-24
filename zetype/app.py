@@ -66,7 +66,7 @@ class App:
     def _render_finished(self) -> None:
         self.window.addstr(0, 0, "You have completed the prompt with the following stats:")
         self.window.addstr(1, 0, f"WPM: {int(self.final_words_per_minute)}")
-        self.window.addstr(2, 0, f"Accuracy: {int(self.final_typing_accuracy)}")
+        self.window.addstr(2, 0, f"Accuracy: {int(self.final_typing_accuracy)}%")
         self.window.addstr(3, 0, "Press any key to exit...")
 
     def _render_prompt(self) -> None:
