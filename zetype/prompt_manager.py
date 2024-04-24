@@ -56,7 +56,7 @@ class TypingStats:
         """
         if self.total_typed == 0:
             return None
-
+        
         return (self.total_correct / self.total_typed) * 100
 
     @property
@@ -169,7 +169,7 @@ class PromptManager:
     def _is_index_in_bounds(self, index: int) -> bool:
         """
         Check if the provided index is within the bounds of `self.prompt`.
-
+in
         Args:
             index (int): The index to check.
 
@@ -232,7 +232,7 @@ class PromptManager:
         self._check_str_is_char(char)
 
         # Add index to `self.error_log` if the character does not match.
-        if is_incorrect := self.current_character != char:
+        if is_incorrect := (self.current_character != char):
             error = InputError(
                 index=self.cursor_index,
                 expected_char=self.current_character,
