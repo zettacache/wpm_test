@@ -18,10 +18,13 @@ class App:
         """
         self.window = window
         self.is_running = False
+        self.is_finished = False
         self.app_start_time = time()
         self.prompt = PromptManager("Hello GitHub, this is zetype! "
                                     "I am a project created to showcase my python skills.")
         self.input = InputHandler(self.prompt)
+        self.final_words_per_minute = -1.0
+        self.final_typing_accuracy = -1.0
 
     def initialize(self) -> None:
         """Initialize the curses environment."""
@@ -39,17 +42,31 @@ class App:
         user_input = self.window.getch()
 
         input_action = self.input.process_getch(user_input)
-        if input_action == InputAction.EXIT_PROGRAM:
+        if self.is_finished and input_action != InputAction.NONE:
             self.stop()
+        else:
+            if input_action == InputAction.EXIT_PROGRAM:
+                self.stop()
+            elif input_action == InputAction.COMPLETE:
+                self._finalize()
 
     def _render(self) -> None:
         """Render the current state of the application."""
         self.window.clear()
-        self._render_prompt()
-        self._render_typed_characters()
-        self._render_incorrect_characters()
-        self._render_cursor()
-        self._render_stats()
+        if self.is_finished:
+            self._render_finished()
+        else:
+            self._render_prompt()
+            self._render_typed_characters()
+            self._render_incorrect_characters()
+            self._render_cursor()
+            self._render_stats()
+
+    def _render_finished(self) -> None:
+        self.window.addstr(0, 0, "You have completed the prompt with the following stats:")
+        self.window.addstr(1, 0, f"WPM: {int(self.final_words_per_minute)}")
+        self.window.addstr(2, 0, f"Accuracy: {int(self.final_typing_accuracy)}")
+        self.window.addstr(3, 0, "Press any key to exit...")
 
     def _render_prompt(self) -> None:
         self.window.addstr(0, 0, self.prompt.prompt, curses.A_DIM)
@@ -91,6 +108,11 @@ class App:
         # Accuracy text
         self.window.addstr(5, 0, accuracy, curses.color_pair(Colors.PRIMARY_INVERTED))
 
+    def _finalize(self):
+        self.is_finished = True
+        self.final_words_per_minute = self.prompt.stats.words_per_minute or -1
+        self.final_typing_accuracy = self.prompt.stats.typing_accuracy or -1
+
     def run(self) -> None:
         """Run the main application loop."""
         self.is_running = True
@@ -101,3 +123,4 @@ class App:
     def stop(self) -> None:
         """Stop the application."""
         self.is_running = False
+        curses.curs_set(1)  # Unhide the cursor
