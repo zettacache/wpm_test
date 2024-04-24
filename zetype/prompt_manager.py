@@ -57,7 +57,6 @@ class TypingStats:
         """
         if self.total_typed == 0:
             return None
-        
         return (self.total_correct / self.total_typed) * 100
 
     @property
@@ -99,6 +98,9 @@ class TypingStats:
 
 
 class InputResponse(Enum):
+    """
+    Used by `PromptManager.process_input` to give a verbose response of to `InputHandler`
+    """
     INCORRECT = auto()
     CORRECT = auto()
     COMPLETE = auto()
@@ -239,7 +241,7 @@ class PromptManager:
         self._check_str_is_char(char)
 
         # Add index to `self.error_log` if the character does not match.
-        if is_incorrect := (self.current_character != char):
+        if is_incorrect := (self.current_character != char): # pylint: disable=superfluous-parens
             error = InputError(
                 index=self.cursor_index,
                 expected_char=self.current_character,
@@ -255,10 +257,8 @@ class PromptManager:
 
         if not is_unfinished:
             return InputResponse.COMPLETE
-        elif is_incorrect:
-            return InputResponse.INCORRECT
-        else:
-            return InputResponse.CORRECT
+
+        return InputResponse.INCORRECT if is_incorrect else InputResponse.CORRECT
 
     def revert_last_input(self) -> None:
         """

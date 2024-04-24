@@ -58,8 +58,5 @@ class InputHandler:  # pylint: disable=too-few-public-methods
             case _:
                 char = chr(user_input)
                 response = self.prompt.process_input(char)
-                
-                if response == InputResponse.COMPLETE:
-                    return InputAction.COMPLETE
-                else:
-                    return InputAction.PROCESSED_INPUT
+                return (InputAction.COMPLETE
+                        if response == InputResponse.COMPLETE else InputAction.PROCESSED_INPUT)

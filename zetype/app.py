@@ -9,6 +9,7 @@ from zetype.input_handler import InputHandler, InputAction
 
 class App:
     """Main application class for terminal-based interaction"""
+    # pylint: disable=too-many-instance-attributes
 
     def __init__(self, window: curses.window):
         """Initialize the application with a curses window.
@@ -99,7 +100,7 @@ class App:
         )
         accuracy = (
             f" ACC: {int(accuracy_float)}% "
-            if (accuracy_float := self.prompt.stats.typing_accuracy) != None
+            if (accuracy_float := self.prompt.stats.typing_accuracy) is not None
             else " TYPE TO START "
         )
 
