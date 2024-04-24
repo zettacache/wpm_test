@@ -23,8 +23,6 @@ class App:
                                     "I am a project created to showcase my python skills.")
         self.input = InputHandler(self.prompt)
 
-        self.wpm: float = 0
-
     def initialize(self) -> None:
         """Initialize the curses environment."""
         curses.noecho()  # Disable echoing user input
@@ -84,7 +82,7 @@ class App:
         )
         accuracy = (
             f" ACC: {int(accuracy_float)}% "
-            if (accuracy_float := self.prompt.stats.typing_accuracy)
+            if (accuracy_float := self.prompt.stats.typing_accuracy) != None
             else " TYPE TO START "
         )
 
