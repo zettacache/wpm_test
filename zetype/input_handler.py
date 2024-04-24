@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from enum import Enum, auto
 
-from zetype.prompt_manager import PromptManager
+from zetype.prompt_manager import PromptManager, InputResponse
 
 
 class InputAction(Enum):
@@ -12,7 +12,8 @@ class InputAction(Enum):
     EXIT_PROGRAM = auto()
     RESIZE = auto()
     UNDO = auto()
-    PROCESS_CHARACTER = auto()
+    PROCESSED_INPUT = auto()
+    COMPLETE = auto()
 
 
 @dataclass
@@ -56,5 +57,9 @@ class InputHandler:  # pylint: disable=too-few-public-methods
                 return InputAction.UNDO
             case _:
                 char = chr(user_input)
-                self.prompt.process_input(char)
-                return InputAction.PROCESS_CHARACTER
+                response = self.prompt.process_input(char)
+                
+                if response == InputResponse.COMPLETE:
+                    return InputAction.COMPLETE
+                else:
+                    return InputAction.PROCESSED_INPUT
