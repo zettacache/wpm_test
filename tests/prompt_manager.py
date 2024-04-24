@@ -1,9 +1,14 @@
+"""Ensures proper functionality of `prompt_manager.py`."""
+
 import unittest
-from zetype import PromptManager, InputError
+from zetype.prompt_manager import PromptManager, InputError
 
 
 class TestPromptManager(unittest.TestCase):
+    """Tests PromptManager class."""
+
     def test_process_input_correct(self):
+        """Tests that correct user-input is processed as correct."""
         prompt = "Hello, world!"
         manager = PromptManager(prompt)
 
@@ -18,6 +23,7 @@ class TestPromptManager(unittest.TestCase):
         self.assertEqual(manager.stats.total_errors, 0)
 
     def test_process_input_incorrect(self):
+        """Tests that incorrect user-input is processed as incorrect."""
         prompt = "Hello, world!"
         manager = PromptManager(prompt)
 
@@ -34,6 +40,7 @@ class TestPromptManager(unittest.TestCase):
         self.assertEqual(error.received_char, 'h')
 
     def test_revert_last_input(self):
+        """Tests that reverting last input is processed correctly."""
         prompt = "Hello, world!"
         manager = PromptManager(prompt)
 

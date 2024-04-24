@@ -1,8 +1,11 @@
+"""Module responsible for the back-end logic of the typing test."""
+
 from dataclasses import dataclass
 from time import time
 from typing import Optional
+from enum import Enum, auto
 
-from zetype import minutes_since
+from zetype.calculations import minutes_since
 
 
 @dataclass
@@ -50,11 +53,10 @@ class TypingStats:
         Calculate the typing accuracy as a percentage.
 
         Returns:
-            float | None: The typing accuracy percentage from 0-100 (Returns `None` if no characters have been counted).
+            float | None: Percentage accuracy (0-100). Returns `None` if no characters are counted.
         """
         if self.total_typed == 0:
             return None
-
         return (self.total_correct / self.total_typed) * 100
 
     @property
@@ -62,17 +64,16 @@ class TypingStats:
         """
         Calculates the average typed words per minute.
 
-        NOTE: Possibly, revisit this to more accurately track wpm instead of average characters per word.
-        Although that could introduce a prompt bias based on length of words given.
-
         Returns:
-            float | None: Average words per minute since `self._start_time` (Returns `None` if no characters
-                          have been counted).
+            float | None: Average words per minute. Returns `None` if no characters are counted.
         """
         if self.total_typed == 0:
             return None
 
-        words_typed = self.total_typed / 4.7  # 4.7 is the average amount of characters in an english word.
+        # The average amount of characters in an english word.
+        average_chars_per_word = 4.7
+
+        words_typed = self.total_typed / average_chars_per_word
         return words_typed / minutes_since(self._start_time)
 
     def update_start_time(self, start_time=time()) -> None:
@@ -80,7 +81,7 @@ class TypingStats:
         Updates `self._start_time` to the provided time.
 
         Args:
-            start_time (float): The new start time in seconds (defaults to time of calling the method).
+            start_time (float): New start time in seconds (defaults to time of method call).
         """
         self._start_time = start_time
 
@@ -89,11 +90,20 @@ class TypingStats:
         Increments the total character counters.
 
         Args:
-            is_correct (bool): Whether the character should be counted as correct or as an error (defaults to True).
+            is_correct (bool): Tracks character as correct or incorrect (defaults to True).
         """
         self.total_typed += 1
         if not is_correct:
             self.total_errors += 1
+
+
+class InputResponse(Enum):
+    """
+    Used by `PromptManager.process_input` to give a verbose response of to `InputHandler`
+    """
+    INCORRECT = auto()
+    CORRECT = auto()
+    COMPLETE = auto()
 
 
 class PromptManager:
@@ -215,7 +225,7 @@ class PromptManager:
         self._check_relative_index_in_bounds(amount)
         self.cursor_index += amount
 
-    def process_input(self, char: str) -> bool:
+    def process_input(self, char: str) -> InputResponse:
         """
         Process input character and update typing statistics.
 
@@ -223,7 +233,7 @@ class PromptManager:
             char (str): The input character to process.
 
         Returns:
-            bool: True if the input character matches the expected character at the cursor index, otherwise False.
+            InputResponse: Enum pertaining to how the input was processed.
 
         Raises:
             ValueError: If `len(char) != 1`
@@ -231,7 +241,7 @@ class PromptManager:
         self._check_str_is_char(char)
 
         # Add index to `self.error_log` if the character does not match.
-        if is_incorrect := (self.current_character != char):
+        if is_incorrect := (self.current_character != char): # pylint: disable=superfluous-parens
             error = InputError(
                 index=self.cursor_index,
                 expected_char=self.current_character,
@@ -239,17 +249,20 @@ class PromptManager:
             )
             self.error_log.append(error)
 
-        # Update stats and cursor
-        self.stats.count_character(is_correct=(not is_incorrect))
-
-        if self._is_relative_index_in_bounds(1):
+        # Moves cursor forward if within bounds
+        if is_unfinished := self._is_relative_index_in_bounds(1):
             self._move_cursor(1)
 
-        return not is_incorrect
+        self.stats.count_character(is_correct=not is_incorrect)
+
+        if not is_unfinished:
+            return InputResponse.COMPLETE
+
+        return InputResponse.INCORRECT if is_incorrect else InputResponse.CORRECT
 
     def revert_last_input(self) -> None:
         """
-        Revert the cursor position to the previous character and remove the last input error from the log.
+        Reverts last input including char, cursor, and errors.
 
         Raises:
             IndexError: If there is no previous input to revert.
@@ -266,7 +279,7 @@ class PromptManager:
         Generates segmented strings from `self.prompt` of size `max_length` or shorter
 
         Args:
-            max_length (int): The maximum length of a segment (the length will be shorter if a space is present)
+            max_length (int): The maximum length of a segment
             start_pos (int): The starting position within the prompt to segment (default 0)
 
         Yields:

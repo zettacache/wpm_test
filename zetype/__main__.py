@@ -1,13 +1,19 @@
-import curses
+"""zetype entry-point"""
 
-from zetype import App
+import curses
+import sys
+from os import system, name
+
+from zetype.app import App
 
 
 def main():
+    """First executed function on run."""
     app: App = curses.wrapper(App)
     app.initialize()
     app.run()
-    exit(0)
+    system("cls" if name == 'nt' else "clear")
+    sys.exit(0)
 
 
 if __name__ == '__main__':
