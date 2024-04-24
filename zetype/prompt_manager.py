@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 from time import time
 from typing import Optional
+from enum import Enum, auto
 
 from zetype.calculations import minutes_since
 
@@ -97,6 +98,12 @@ class TypingStats:
             self.total_errors += 1
 
 
+class InputResponse(Enum):
+    INCORRECT = auto()
+    CORRECT = auto()
+    COMPLETE = auto()
+
+
 class PromptManager:
     """
     Manages a typing prompt for a word per minute (WPM) test application.
@@ -169,7 +176,7 @@ class PromptManager:
     def _is_index_in_bounds(self, index: int) -> bool:
         """
         Check if the provided index is within the bounds of `self.prompt`.
-in
+
         Args:
             index (int): The index to check.
 
@@ -216,7 +223,7 @@ in
         self._check_relative_index_in_bounds(amount)
         self.cursor_index += amount
 
-    def process_input(self, char: str) -> bool:
+    def process_input(self, char: str) -> InputResponse:
         """
         Process input character and update typing statistics.
 
@@ -224,7 +231,7 @@ in
             char (str): The input character to process.
 
         Returns:
-            bool: If character is correct or not.
+            InputResponse: Enum pertaining to how the input was processed.
 
         Raises:
             ValueError: If `len(char) != 1`
@@ -239,15 +246,19 @@ in
                 received_char=char,
             )
             self.error_log.append(error)
-        is_correct = not is_incorrect
 
         # Moves cursor forward if within bounds
-        if self._is_relative_index_in_bounds(1):
+        if is_unfinished := self._is_relative_index_in_bounds(1):
             self._move_cursor(1)
 
-        self.stats.count_character(is_correct=is_correct)
+        self.stats.count_character(is_correct=not is_incorrect)
 
-        return is_correct
+        if not is_unfinished:
+            return InputResponse.COMPLETE
+        elif is_incorrect:
+            return InputResponse.INCORRECT
+        else:
+            return InputResponse.CORRECT
 
     def revert_last_input(self) -> None:
         """
