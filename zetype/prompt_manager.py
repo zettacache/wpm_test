@@ -273,4 +273,3 @@ class PromptManager:
         self._move_cursor(-1)
         if (len(self.error_log) > 0) and (self.error_log[-1].index == self.cursor_index):
             self.error_log.pop()
-
